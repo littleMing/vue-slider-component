@@ -244,11 +244,11 @@ export default class Control {
    *
    * @param {number} pos
    * @param {number} index
+   * @param {number} diff
    */
-  setDotPos(pos: number, index: number) {
+  setDotPos(pos: number, index: number, diff: number = 0) {
     pos = this.getValidPos(pos, index).pos
-    const changePos = pos - this.dotsPos[index]
-
+    const changePos = pos - this.dotsPos[index] - diff
     if (!changePos) {
       return
     }

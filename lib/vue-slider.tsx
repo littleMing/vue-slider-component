@@ -51,6 +51,8 @@ export default class VueSlider extends Vue {
   // Currently dragged slider index
   focusDotIndex: number = 0
 
+  diff: number = 0
+
   $refs!: {
     container: HTMLDivElement
   }
@@ -496,14 +498,29 @@ export default class VueSlider extends Vue {
     this.$emit('drag-start')
   }
 
+  private dragProcess(e: MouseEvent | TouchEvent) {
+    this.focusDotIndex = 0
+    this.setScale()
+    const pos = this.getPosByEvent(e)
+    const leftDotPos = this.control.dotsPos[0]
+    this.diff = pos - leftDotPos
+    this.states.add(SliderState.Drag)
+    this.states.add(SliderState.Focus)
+    this.$emit('drag-start')
+  }
+
   private dragMove(e: MouseEvent | TouchEvent) {
     if (!this.states.has(SliderState.Drag)) {
       return false
     }
     e.preventDefault()
     const pos = this.getPosByEvent(e)
+    if (pos - this.diff < 0) {
+      return false
+    }
+
     this.isCrossDot(pos)
-    this.control.setDotPos(pos, this.focusDotIndex)
+    this.control.setDotPos(pos, this.focusDotIndex, this.diff)
     if (!this.lazy) {
       this.syncValueByPos()
     }
@@ -549,6 +566,7 @@ export default class VueSlider extends Vue {
       if (!this.useKeyboard) {
         this.states.delete(SliderState.Focus)
       }
+      this.diff = 0
       this.$emit('drag-end')
     })
   }
@@ -706,7 +724,13 @@ export default class VueSlider extends Vue {
             this.renderSlot<Process>(
               'process',
               item,
-              <div class="vue-slider-process" key={`process-${index}`} style={item.style} />,
+              <div
+                class="vue-slider-process"
+                key={`process-${index}`}
+                style={item.style}
+                onMousedown={(e: MouseEvent | TouchEvent) => this.dragProcess(e)}
+                onTouchstart={(e: MouseEvent | TouchEvent) => this.dragProcess(e)}
+              />,
               true,
             ),
           )}
